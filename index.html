@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1B3F9B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Natulac Censo">
+<title>Natulac — Censo de Clientes</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:       #1B3F9B;
+    --blue-dark:  #112C78;
+    --blue-mid:   #2451B8;
+    --blue-pale:  #E6ECF8;
+    --blue-soft:  rgba(27,63,155,0.07);
+    --white:      #FFFFFF;
+    --off-white:  #F4F7FC;
+    --text:       #0D1E40;
+    --text2:      #3A5080;
+    --text3:      #7A93BC;
+    --border:     rgba(27,63,155,0.15);
+    --border2:    rgba(27,63,155,0.08);
+    --success:    #16A34A;
+    --warning:    #D97706;
+    --danger:     #DC2626;
+    --radius:     16px;
+    --radius-sm:  10px;
+    --shadow:     0 2px 10px rgba(27,63,155,0.09);
+    --shadow-md:  0 4px 24px rgba(27,63,155,0.14);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--off-white); font-family: 'Nunito Sans', sans-serif; color: var(--text); }
+  #app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--blue);
+    padding: 0 16px;
+    height: 60px;
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(10,30,90,0.40);
+  }
+  .header-logo-wrap { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .header-natulac-logo { height: 40px; width: 40px; flex-shrink: 0; object-fit: contain; border-radius: 6px; }
+  .header-divider { width: 1px; height: 30px; background: rgba(255,255,255,0.25); flex-shrink: 0; }
+  .header-app-name { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 13px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-app-sub { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-status { display: flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,0.6); flex-shrink: 0; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; animation: pulse 2s infinite; }
+  .status-dot.offline { background: #FCD34D; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  /* ── PROGRESS ── */
+  .progress-bar { height: 3px; background: rgba(27,63,155,0.12); flex-shrink: 0; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg,#4A7FE0,#88AAEE); transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+
+  /* ── OFFLINE BANNER ── */
+  .offline-banner { background: #FEF9C3; border-bottom: 1px solid #FDE68A; padding: 8px 16px; font-size: 12px; color: #854D0E; display: none; align-items: center; gap: 8px; flex-shrink: 0; }
+  .offline-banner.show { display: flex; }
+
+  /* ── CONTENT ── */
+  .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px 100px; background: var(--off-white); }
+  .content::-webkit-scrollbar { width: 3px; }
+  .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; animation: fadeIn 0.25s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── LOGIN ── */
+  .login-wrap { min-height: calc(100vh - 60px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; }
+  .login-logo-wrap { margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .login-natulac-logo { width: 130px; height: 130px; object-fit: contain; border-radius: 20px; }
+  .login-badge { background: var(--blue-pale); border: 1px solid var(--border); border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 700; color: var(--blue); letter-spacing: 0.05em; }
+  .login-title { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 24px; text-align: center; margin-bottom: 8px; color: var(--text); }
+  .login-sub { font-size: 14px; color: var(--text2); text-align: center; margin-bottom: 28px; line-height: 1.6; }
+  .login-card { background: var(--white); border: 1px solid var(--border2); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 380px; box-shadow: var(--shadow-md); }
+
+  /* ── SECTION CARDS ── */
+  .section-card { background: var(--white); border: 1px solid var(--border2); border-radius: var(--radius); padding: 20px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── FORM ── */
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
+  label span.req { color: var(--danger); margin-left: 2px; }
+  input[type="text"], input[type="email"], select, textarea {
+    width: 100%; background: var(--off-white); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: 'Nunito Sans', sans-serif; font-size: 15px; padding: 13px 15px;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none; appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(27,63,155,0.10); }
+  input.error, select.error { border-color: var(--danger); }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%233A5080' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 38px; }
+  select option { background: #fff; color: var(--text); }
+  .field-hint { font-size: 12px; color: var(--text3); margin-top: 5px; }
+  .field-error { font-size: 12px; color: var(--danger); margin-top: 5px; display: none; }
+  .field-error.show { display: block; }
+
+  /* ── RADIO CARDS ── */
+  .radio-group { display: flex; flex-direction: column; gap: 9px; }
+  .radio-card { display: flex; align-items: center; gap: 13px; background: var(--off-white); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 13px 15px; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+  .radio-card:active { transform: scale(0.99); }
+  .radio-card.selected { border-color: var(--blue); background: var(--blue-soft); }
+  .radio-card input { display: none; }
+  .radio-circle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--text3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color 0.2s; }
+  .radio-card.selected .radio-circle { border-color: var(--blue); }
+  .radio-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); display: none; }
+  .radio-card.selected .radio-dot { display: block; }
+  .radio-text { flex: 1; }
+  .radio-label { font-size: 15px; font-weight: 600; color: var(--text); }
+  .radio-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* ── GPS BUTTON ── */
+  .gps-btn { width: 100%; background: var(--off-white); border: 1.5px dashed var(--border); border-radius: var(--radius-sm); color: var(--text2); font-family: 'Nunito Sans', sans-serif; font-size: 14px; padding: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
+  .gps-btn:active { transform: scale(0.98); }
+  .gps-btn.success { border-color: var(--success); border-style: solid; color: var(--success); background: #F0FDF4; }
+  .gps-icon { font-size: 20px; }
+
+  /* ── BUTTONS ── */
+  .btn { width: 100%; padding: 14px; border: none; border-radius: var(--radius-sm); font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--blue); color: #fff; box-shadow: 0 3px 12px rgba(27,63,155,0.30); }
+  .btn-primary:hover { background: var(--blue-mid); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-secondary { background: var(--off-white); color: var(--text2); border: 1.5px solid var(--border); }
+  .btn-ghost { background: transparent; color: var(--text2); font-size: 14px; }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border2); padding: 12px 16px; display: flex; gap: 10px; box-shadow: 0 -2px 10px rgba(27,63,155,0.07); }
+
+  /* ── STEP INDICATOR ── */
+  .step-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .step-title { font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 800; color: var(--text); }
+  .step-counter { font-size: 12px; font-weight: 700; color: var(--blue); background: var(--blue-pale); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; }
+
+  /* ── SUCCESS ── */
+  .success-wrap { min-height: calc(100vh - 120px); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; }
+  .success-icon { width: 90px; height: 90px; background: #DCFCE7; border: 2px solid #86EFAC; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 24px; animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes popIn { from{transform:scale(0)} to{transform:scale(1)} }
+  .success-title { font-family: 'Nunito', sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 10px; color: var(--success); }
+  .success-sub { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 32px; }
+
+  /* ── QUEUE BADGE ── */
+  .queue-badge { background: #FEF9C3; border: 1px solid #FDE68A; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #854D0E; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+
+  /* ── LOCATION OPTIONS ── */
+  .loc-option { border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; transition: border-color .2s; }
+  .loc-option.active { border-color: var(--blue); }
+  .loc-option-header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; background: var(--off-white); }
+  .loc-option.active .loc-option-header { background: var(--blue-pale); }
+  .loc-radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--text3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color .2s; }
+  .loc-option.active .loc-radio { border-color: var(--blue); }
+  .loc-radio-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); display: none; }
+  .loc-option.active .loc-radio-dot { display: block; }
+  .loc-option-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .loc-option-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .loc-option-body { padding: 12px 14px; border-top: 1px solid var(--border); background: var(--white); }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ HEADER ══ -->
+  <div class="header">
+    <div class="header-logo-wrap">
+
+      <img src="https://qa.natulac.com/wp-content/uploads/2022/07/cropped-favicon.png" class="header-natulac-logo" alt="Natulac">
+
+      <div class="header-divider"></div>
+      <div>
+        <div class="header-app-name">Censo de Clientes</div>
+        <div class="header-app-sub" id="header-user">Iniciando sesión...</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <div class="header-status">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">En línea</span>
+      </div>
+      <button id="btn-logout" onclick="doLogout()" title="Cerrar sesión"
+        style="display:none;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
+               border-radius:8px;color:#fff;font-size:11px;font-weight:700;padding:5px 10px;
+               cursor:pointer;font-family:'Nunito Sans',sans-serif;white-space:nowrap;">
+        ↩ Salir
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ OFFLINE BANNER ══ -->
+  <div class="offline-banner" id="offline-banner">
+    ⚠ Sin conexión — La encuesta se guardará y enviará cuando haya internet
+  </div>
+
+  <!-- ══ PROGRESS ══ -->
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+
+  <!-- ══ CONTENT ══ -->
+  <div class="content" id="main-content">
+
+    <!-- ▬▬ SCREEN: LOGIN ▬▬ -->
+    <div class="screen active" id="screen-login">
+      <div class="login-wrap">
+        <div class="login-logo-wrap">
+
+          <img src="https://qa.natulac.com/wp-content/uploads/2022/07/cropped-favicon.png" class="login-natulac-logo" alt="Natulac">
+
+          <div class="login-badge">Censo de Clientes</div>
+        </div>
+
+        <div class="login-title">Bienvenido</div>
+        <div class="login-sub">Ingresa tu correo corporativo<br>para comenzar la encuesta</div>
+
+        <div class="login-card">
+          <div class="field">
+            <label>Correo corporativo <span class="req">*</span></label>
+            <input type="email" id="login-email" placeholder="usuario@natulac.com" autocomplete="email">
+            <div class="field-error" id="login-error">Ingresa un correo válido</div>
+          </div>
+          <button class="btn btn-primary" onclick="doLogin()" style="margin-top:8px">
+            Ingresar →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▬▬ STEP 1 — Datos del cliente ▬▬ -->
+    <div class="screen" id="screen-1">
+      <div class="step-info">
+        <div class="step-title">Datos del cliente</div>
+        <div class="step-counter">1 de 5</div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-label">Identificación</div>
+        <div class="field">
+          <label>Razón Social <span class="req">*</span></label>
+          <input type="text" id="f-razon" placeholder="Ej: Industrias Maros, C.A." oninput="updateNombrePreview()">
+          <div class="field-error" id="err-razon">Campo requerido</div>
+        </div>
+        <div class="field">
+          <label>RIF del cliente <span class="req">*</span></label>
+          <input type="text" id="f-rif" placeholder="Ej: J000537585" maxlength="20">
+          <div class="field-hint">Formato: J000537585 o G200131004</div>
+          <div class="field-error" id="err-rif">Campo requerido</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-label">Tipo de registro</div>
+        <label class="radio-card" id="toggle-sucursal-card" onclick="toggleSucursal()" style="cursor:pointer; user-select:none">
+          <div style="flex:1">
+            <div class="radio-label">Registrar como sucursal</div>
+            <div class="radio-desc">Activa si es una sucursal de empresa ya registrada</div>
+          </div>
+          <div id="toggle-track" style="width:46px;height:26px;border-radius:13px;background:#E2E8F4;border:1.5px solid var(--border);position:relative;flex-shrink:0;transition:background .25s,border-color .25s;">
+            <div id="toggle-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--text3);transition:transform .25s,background .25s;"></div>
+          </div>
+        </label>
+        <div id="card-sucursal-nombre" style="display:none;margin-top:14px">
+          <div class="field" style="margin-bottom:0">
+            <label>Nombre de la sucursal <span class="req">*</span></label>
+            <input type="text" id="f-sucursal" placeholder="Ej: Sucursal Las Mercedes" oninput="updateNombrePreview()">
+            <div class="field-hint">Se registrará como: Razón Social — Nombre Sucursal</div>
+            <div class="field-error" id="err-sucursal">Campo requerido</div>
+          </div>
+          <div id="nombre-preview" style="display:none;margin-top:10px;padding:10px 14px;background:var(--blue-pale);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--blue);font-weight:600;line-height:1.5;"></div>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+        <button class="btn btn-primary" onclick="goStep(2)">Siguiente →</button>
+      </div>
+    </div>
+
+    <!-- ▬▬ STEP 2 — Clasificación ▬▬ -->
+    <div class="screen" id="screen-2">
+      <div class="step-info">
+        <div class="step-title">Clasificación</div>
+        <div class="step-counter">2 de 5</div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-label">Tipo de cliente</div>
+        <div class="radio-group" id="tipo-grupo">
+          <label class="radio-card" onclick="selectTipo('Directo')">
+            <input type="radio" name="tipo" value="Directo">
+            <div class="radio-circle"><div class="radio-dot"></div></div>
+            <div class="radio-text">
+              <div class="radio-label">Directo</div>
+              <div class="radio-desc">Compra directamente a Natulac</div>
+            </div>
+          </label>
+          <label class="radio-card" onclick="selectTipo('Indirecto')">
+            <input type="radio" name="tipo" value="Indirecto">
+            <div class="radio-circle"><div class="radio-dot"></div></div>
+            <div class="radio-text">
+              <div class="radio-label">Indirecto</div>
+              <div class="radio-desc">Compra a través de un distribuidor</div>
+            </div>
+          </label>
+        </div>
+        <div class="field-error" id="err-tipo" style="margin-top:10px">Selecciona una opción</div>
+      </div>
+
+      <div class="section-card" id="card-distribuidor" style="display:none">
+        <div class="section-label">Distribuidor</div>
+        <div class="field">
+          <label>Nombre del distribuidor <span class="req">*</span></label>
+          <input type="text" id="f-distribuidor" placeholder="Nombre del distribuidor">
+          <div class="field-error" id="err-distribuidor">Campo requerido</div>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+        <button class="btn btn-secondary" onclick="goBack(1)" style="flex:0 0 80px">← Atrás</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Siguiente →</button>
+      </div>
+    </div>
+
+    <!-- ▬▬ STEP 3 — Canal ▬▬ -->
+    <div class="screen" id="screen-3">
+      <div class="step-info">
+        <div class="step-title">Canal de venta</div>
+        <div class="step-counter">3 de 5</div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-label">Canal</div>
+        <div class="radio-group" id="canal-grupo">
+          <label class="radio-card" onclick="selectCanal('Conveniencia')">
+            <input type="radio" name="canal" value="Conveniencia">
+            <div class="radio-circle"><div class="radio-dot"></div></div>
+            <div class="radio-text"><div class="radio-label">Conveniencia</div></div>
+          </label>
+          <label class="radio-card" onclick="selectCanal('Mayorista')">
+            <input type="radio" name="canal" value="Mayorista">
+            <div class="radio-circle"><div class="radio-dot"></div></div>
+            <div class="radio-text"><div class="radio-label">Mayorista</div></div>
+          </label>
+          <label class="radio-card" onclick="selectCanal('Moderno')">
+            <input type="radio" name="canal" value="Moderno">
+            <div class="radio-circle"><div class="radio-dot"></div></div>
+            <div class="radio-text"><div class="radio-label">Moderno</div></div>
+          </label>
+          <label class="radio-card" onclick="selectCanal('Tradicional')">
+            <input type="radio" name="canal" value="Tradicional">
+            <div class="radio-circle"><div class="radio-dot"></div></div>
+            <div class="radio-text"><div class="radio-label">Tradicional</div></div>
+          </label>
+        </div>
+        <div class="field-error" id="err-canal" style="margin-top:10px">Selecciona un canal</div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-label">Sub-Canal</div>
+        <div class="field">
+          <select id="f-subcanal">
+            <option value="">Seleccionar sub-canal...</option>
+            <option>Abasto</option><option>Bodegas</option>
+            <option>Cadena de Farmacia</option><option>Cadena Nacional</option>
+            <option>Cadena Regional</option><option>Cash &amp; Carry</option>
+            <option>Colegios</option><option>Conveniencia</option>
+            <option>Estación de Servicio</option><option>Farmacias Independientes</option>
+            <option>Hiper Mercado</option><option>Kioskos</option>
+            <option>Mayorista Estratégico</option><option>Mayorista NO Estratégico</option>
+            <option>Panaderías</option><option>Restaurantes y Cafetines</option>
+            <option>Supermercado Independiente (SMI)</option><option>Otros</option>
+          </select>
+          <div class="field-error" id="err-subcanal">Selecciona un sub-canal</div>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+        <button class="btn btn-secondary" onclick="goBack(2)" style="flex:0 0 80px">← Atrás</button>
+        <button class="btn btn-primary" onclick="goStep(4)">Siguiente →</button>
+      </div>
+    </div>
+
+    <!-- ▬▬ STEP 4 — Localización ▬▬ -->
+    <div class="screen" id="screen-4">
+      <div class="step-info">
+        <div class="step-title">Localización</div>
+        <div class="step-counter">4 de 5</div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-label">Estado</div>
+        <div class="field">
+          <select id="f-estado" onchange="onEstadoChange()">
+            <option value="">Seleccionar estado...</option>
+            <option>Amazonas</option><option>Anzoategui</option><option>Apure</option>
+            <option>Aragua</option><option>Barinas</option><option>Bolivar</option>
+            <option>Carabobo</option><option>Cojedes</option><option>Delta Amacuro</option>
+            <option>Dependencia Federal</option><option>Distrito Capital</option>
+            <option>Falcon</option><option>Guarico</option><option>Lara</option>
+            <option>Merida</option><option>Miranda</option><option>Monagas</option>
+            <option>Nueva Esparta</option><option>Portuguesa</option><option>Sucre</option>
+            <option>Tachira</option><option>Trujillo</option><option>Yaracuy</option><option>Zulia</option>
+          </select>
+          <div class="field-error" id="err-estado">Selecciona un estado</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-label">Ciudad</div>
+        <div class="field">
+          <select id="f-ciudad">
+            <option value="">Primero selecciona un estado...</option>
+          </select>
+          <div class="field-error" id="err-ciudad">Selecciona una ciudad</div>
+        </div>
+      </div>
+
+      <div class="bottom-nav">
+        <button class="btn btn-secondary" onclick="goBack(3)" style="flex:0 0 80px">← Atrás</button>
+        <button class="btn btn-primary" onclick="goStep(5)">Siguiente →</button>
+      </div>
+    </div>
+
+    <!-- ▬▬ STEP 5 — GPS + Resumen ▬▬ -->
+    <div class="screen" id="screen-5">
+      <div class="step-info">
+        <div class="step-title">Geolocalización</div>
+        <div class="step-counter">5 de 5</div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-label">Ubicación del cliente</div>
+
+        <!-- Opción A: GPS automático -->
+        <div class="loc-option" id="loc-opt-gps">
+          <div class="loc-option-header" onclick="selectLocMethod('gps')">
+            <div class="loc-radio" id="loc-radio-gps"><div class="loc-radio-dot"></div></div>
+            <div>
+              <div class="loc-option-title">📡 GPS automático</div>
+              <div class="loc-option-sub">Usa el sensor GPS de tu dispositivo</div>
+            </div>
+          </div>
+          <div class="loc-option-body" id="loc-body-gps">
+            <button class="gps-btn" id="gps-btn" onclick="getGPS()">
+              <span class="gps-icon">📍</span>
+              <span id="gps-label">Obtener ubicación actual</span>
+            </button>
+            <div class="field-hint" style="margin-top:8px">Asegúrate de tener el GPS activado</div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div style="display:flex;align-items:center;gap:10px;margin:10px 0">
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+          <span style="font-size:11px;color:var(--text3);font-weight:600">O</span>
+          <div style="flex:1;height:1px;background:var(--border)"></div>
+        </div>
+
+        <!-- Opción B: Mapa interactivo -->
+        <div class="loc-option" id="loc-opt-map">
+          <div class="loc-option-header" onclick="selectLocMethod('map')">
+            <div class="loc-radio" id="loc-radio-map"><div class="loc-radio-dot"></div></div>
+            <div>
+              <div class="loc-option-title">🗺️ Seleccionar en mapa</div>
+              <div class="loc-option-sub">Toca el mapa para marcar la ubicación exacta</div>
+            </div>
+          </div>
+          <div class="loc-option-body" id="loc-body-map" style="display:none">
+            <div id="leaflet-map" style="height:240px;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);margin-bottom:8px"></div>
+            <div class="field-hint">Toca cualquier punto del mapa para colocar el marcador</div>
+          </div>
+        </div>
+
+        <!-- Resultado compartido -->
+        <div id="gps-result" style="display:none; margin-top:14px">
+          <div style="background:var(--blue-pale);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--text2)">
+            <div style="margin-bottom:4px">📌 Latitud: <span id="gps-lat" style="color:var(--blue);font-weight:600"></span></div>
+            <div>📌 Longitud: <span id="gps-lng" style="color:var(--blue);font-weight:600"></span></div>
+          </div>
+          <a id="gps-maps-link" href="#" target="_blank"
+             style="display:block;margin-top:8px;font-size:12px;color:var(--blue-mid);text-decoration:none;font-weight:600">
+            Ver en Google Maps →
+          </a>
+        </div>
+        <div class="field-error" id="err-gps" style="margin-top:8px">Debes obtener o seleccionar una ubicación para continuar.</div>
+      </div>
+
+      <div class="section-card" id="resumen-card">
+        <div class="section-label">Resumen de la encuesta</div>
+        <div id="resumen-body" style="font-size:13px; color:var(--text2); line-height:2"></div>
+      </div>
+
+      <div class="bottom-nav">
+        <button class="btn btn-secondary" onclick="goBack(4)" style="flex:0 0 80px">← Atrás</button>
+        <button class="btn btn-primary" id="btn-enviar" onclick="enviarEncuesta()">✓ Enviar encuesta</button>
+      </div>
+    </div>
+
+    <!-- ▬▬ SUCCESS ▬▬ -->
+    <div class="screen" id="screen-success">
+      <div class="success-wrap">
+        <div class="success-icon">✓</div>
+        <div class="success-title">¡Encuesta enviada!</div>
+        <div class="success-sub" id="success-msg">Los datos han sido registrados correctamente en el sistema.</div>
+        <div class="queue-badge" id="queue-info" style="display:none">
+          ⏳ <span id="queue-count">0</span> encuesta(s) pendiente(s) de sincronizar
+        </div>
+        <button class="btn btn-primary" onclick="nuevaEncuesta()" style="max-width:300px">+ Nueva encuesta</button>
+        <button class="btn btn-ghost" onclick="verPendientes()" style="margin-top:12px;max-width:300px" id="btn-sync">Sincronizar pendientes</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIGURACIÓN
+// ══════════════════════════════════════════
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBHyFP5DR1KiC09I9AuxobioWj3o1Xs9nevByCbxDTAhen1frBXwGNKrnaD1eWdCmy/exec'; // ← Pegar URL del Web App de Apps Script
+
+// ══════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════
+let currentUser = '';
+let currentStep = 0;
+let formData = {};
+let gpsCoords = null;
+let isOnline = navigator.onLine;
+const TOTAL_STEPS = 5;
+const QUEUE_KEY = 'censo_queue';
+const USER_KEY = 'censo_user';
+
+// ══════════════════════════════════════════
+//  CIUDADES POR ESTADO
+// ══════════════════════════════════════════
+const CIUDADES = {
+  'Amazonas': ['Anacadia','Arataya','Buena Vista','Cabadisecaña','Cacuri','Castaña','El Oso','El Venado (Amazonas)','Guanajuaña','Guzman Blanco','La Esmeralda','Laja Jeboa','Macanilla','Majanajanaña','Maroa','Mision Padomo','Munduapo','Morganito','Platanal','Pueblo Viejo','Puerto Ayacucho','Rajuña','Samariapo','San Antonio (Amazonas)','San Carlos Rio Negro','San Fernando De Atabapo','San Jose','San Juan De Manapiare','San Raimundo','Santa Maria Guaicas','Santa Rosa De Amadona','Solano','Suiña','Uasaña','Yabita'],
+  'Anzoategui': ['Aguasay','Anaco','Aragua De Barcelona','Barcelona','Bergantin','Boca De Uchire','Cantaura','Clarines','El Chaparro','El Tigre','El Tigrito (San Jose De Guanipa)','Guanta','Jusepin','Lecherias','Onoto','Pariaguan','Piritu','Puerto La Cruz','Puerto Piritu','Punta De Mata','San Tome','Santa Ana (Anzoategui)','Soledad'],
+  'Apure': ['Achaguas','Biruaca','Bruzual','Camaguan','El Amparo','Elorza','Guasdualito','Puerto Paez','San Fernando De Apure','San Juan De Payara'],
+  'Aragua': ['Barbacoas','Cagua','Camatagua','Choroni','Colonia Tovar','El Consejo (Aragua)','El Limon','La Victoria','Magdaleno','Maracay','Mariara','Ocumare De La Costa','Palo Negro','San Casimiro','Santa Cruz De Aragua','Tejerias','Turmero','Villa De Cura'],
+  'Barinas': ['Barinas','Barinitas','Barrancas (Barinas)','Las Veguitas','Pedraza','Sabaneta','Socopo'],
+  'Bolivar': ['Caicara Del Orinoco','El Callao','El Dorado','El Manteco','Guasipati','Matanzas','Puerto Ordaz (Ciudad Guayana)','San Felix (Ciudad Guayana)','Santa Elena De Uairen','Tumeremo','Upata','Ciudad Bolivar'],
+  'Carabobo': ['Bejuma','Campo De Carabobo','Guacara','Guigue','Los Guayos','Miranda','Montalban','Moron','Naguanagua','Puerto Cabello','San Joaquin (Carabobo)','Tocuyito','Valencia'],
+  'Cojedes': ['El Baul','El Pao','Las Vegas','San Carlos','Tinaco','Tinaquillo'],
+  'Delta Amacuro': ['Barrancas (Monagas)','Curiapo','Pedernales','Piacoa','Tucupita'],
+  'Dependencia Federal': ['Archipielago De Los Frailes','Archipilago Los Roques','Isla La Blanquilla','Isla La Tortuga','Los Roques'],
+  'Distrito Capital': ['Caracas','Caraballeda','Catia La Mar','Charallave','El Junquito','Guarenas','Guatire','La Guaira','Los Teques','Maiquetia','Naiguata','Petare','San Antonio De Los Altos'],
+  'Falcon': ['Adicora','Chichiriviche','Churuguara','Coro','Cumarebo','Judibana','La Vela De Coro','Mene De Mauroa','Punto Fijo','Santa Ana (Falcon)','Tucacas'],
+  'Guarico': ['Altagracia De Orituco','Calabozo','Chaguaramas','El Socorro','Las Mercedes Del Llano','San Juan de los Morros','Valle De La Pascua','Zaraza'],
+  'Lara': ['Barquisimeto','Cabudare','Campo Elias','Carora','Duaca','El Tocuyo','Quibor','Sanare','Sarare','Yaritagua'],
+  'Merida': ['Bailadores','Ejido','El Vigia','La Azulita','Merida','Mucuchies','Santa Cruz De Mora','Tovar','Zea'],
+  'Miranda': ['Caracas','Caucagua','Cua','Cupira','El Guapo','Higuerote','Ocumare Del Tuy','Rio Chico','San Francisco De Yare','Santa Lucia','Santa Teresa del Tuy','Guatire'],
+  'Monagas': ['Caripito','Maturin','Miraflores','Quiriquire'],
+  'Nueva Esparta': ['Altagracia','Juan Griego','La Asuncion','Pampatar','Porlamar','Punta De Piedras','San Juan Bautista','Santa Ana (Nueva Esparta)'],
+  'Portuguesa': ['Acarigua','Araure','Guanare','Guanarito','Ospino','Payara','San Rafael De Onoto','Turen Villa Bruzual'],
+  'Sucre': ['Araya','Carupano','Cumana','Cumanacoa','El Pilar (Sucre)','Guiria','Irapa','Rio Caribe','Yaguaraparo'],
+  'Tachira': ['Colon','Cordero','La Fria','La Grita','Rubio','San Antonio Del Tachira','San Cristobal','San Juan De Colon','Ureña'],
+  'Trujillo': ['Betijoque','Bocono','Carache','Escuque','Motatan','Pampanito','Trujillo','Valera'],
+  'Yaracuy': ['Cocorote','Nirgua','San Felipe','San Pablo','Yumare'],
+  'Zulia': ['Bachaquero','Cabimas','Ciudad Ojeda','Lagunillas (Zulia)','Machiques','Maracaibo','Mene Grande','Paraguaipoa','San Rafael Del Mojan','Villa Del Rosario']
+};
+
+// ══════════════════════════════════════════
+//  ONLINE / OFFLINE
+// ══════════════════════════════════════════
+window.addEventListener('online', () => {
+  isOnline = true;
+  document.getElementById('status-dot').classList.remove('offline');
+  document.getElementById('status-text').textContent = 'En línea';
+  document.getElementById('offline-banner').classList.remove('show');
+  syncQueue();
+});
+window.addEventListener('offline', () => {
+  isOnline = false;
+  document.getElementById('status-dot').classList.add('offline');
+  document.getElementById('status-text').textContent = 'Sin conexión';
+  document.getElementById('offline-banner').classList.add('show');
+});
+
+// ══════════════════════════════════════════
+//  LOGIN
+// ══════════════════════════════════════════
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const errEl = document.getElementById('login-error');
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!re.test(email)) {
+    errEl.classList.add('show');
+    document.getElementById('login-email').classList.add('error');
+    return;
+  }
+  errEl.classList.remove('show');
+  currentUser = email;
+  localStorage.setItem(USER_KEY, email);
+  document.getElementById('header-user').textContent = email;
+  document.getElementById('btn-logout').style.display = 'block';
+  showScreen('screen-1');
+  updateProgress(1);
+}
+
+// ══════════════════════════════════════════
+//  NAVEGACIÓN
+// ══════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('main-content').scrollTop = 0;
+}
+function updateProgress(step) {
+  currentStep = step;
+  const pct = step === 0 ? 0 : Math.round((step / TOTAL_STEPS) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+function goStep(step) {
+  if (!validateStep(currentStep)) return;
+  collectStep(currentStep);
+  showScreen('screen-' + step);
+  updateProgress(step);
+  if (step === 5) {
+    buildResumen();
+    // Activar GPS como método por defecto
+    selectLocMethod('gps');
+  }
+}
+// Retroceder sin validar — solo guarda lo que hay para no perder valores
+function goBack(step) {
+  collectStep(currentStep);
+  showScreen('screen-' + step);
+  updateProgress(step);
+}
+
+// ══════════════════════════════════════════
+//  VALIDACIONES
+// ══════════════════════════════════════════
+function validateStep(step) {
+  if (step === 1) {
+    let ok = true;
+    if (!v('f-razon', 'err-razon')) ok = false;
+    if (!v('f-rif', 'err-rif')) ok = false;
+    if (formData.esSucursal && !v('f-sucursal', 'err-sucursal')) ok = false;
+    return ok;
+  }
+  if (step === 2) {
+    let ok = true;
+    if (!formData.tipo) { document.getElementById('err-tipo').classList.add('show'); ok = false; }
+    else document.getElementById('err-tipo').classList.remove('show');
+    if (formData.tipo === 'Indirecto' && !v('f-distribuidor', 'err-distribuidor')) ok = false;
+    return ok;
+  }
+  if (step === 3) {
+    let ok = true;
+    if (!formData.canal) { document.getElementById('err-canal').classList.add('show'); ok = false; }
+    else document.getElementById('err-canal').classList.remove('show');
+    if (!vs('f-subcanal', 'err-subcanal')) ok = false;
+    return ok;
+  }
+  if (step === 4) {
+    let ok = true;
+    if (!vs('f-estado', 'err-estado')) ok = false;
+    if (!vs('f-ciudad', 'err-ciudad')) ok = false;
+    return ok;
+  }
+  return true;
+}
+function v(fId, eId) {
+  const el = document.getElementById(fId), err = document.getElementById(eId);
+  if (!el.value.trim()) { el.classList.add('error'); err.classList.add('show'); return false; }
+  el.classList.remove('error'); err.classList.remove('show'); return true;
+}
+function vs(fId, eId) {
+  const el = document.getElementById(fId), err = document.getElementById(eId);
+  if (!el.value) { el.classList.add('error'); err.classList.add('show'); return false; }
+  el.classList.remove('error'); err.classList.remove('show'); return true;
+}
+
+// ══════════════════════════════════════════
+//  RECOGER DATA
+// ══════════════════════════════════════════
+function collectStep(step) {
+  if (step === 1) {
+    formData.razon    = document.getElementById('f-razon').value.trim();
+    formData.rif      = document.getElementById('f-rif').value.trim().toUpperCase();
+    formData.sucursal = formData.esSucursal ? document.getElementById('f-sucursal').value.trim() : '';
+    formData.nombre_final = formData.esSucursal && formData.sucursal
+      ? `${formData.razon} — ${formData.sucursal}` : formData.razon;
+  }
+  if (step === 2) {
+    formData.distribuidor = formData.tipo === 'Indirecto'
+      ? document.getElementById('f-distribuidor').value.trim() : '';
+  }
+  if (step === 3) formData.subcanal = document.getElementById('f-subcanal').value;
+  if (step === 4) {
+    formData.estado = document.getElementById('f-estado').value;
+    formData.ciudad = document.getElementById('f-ciudad').value;
+  }
+}
+
+// ══════════════════════════════════════════
+//  SELECCIONES RADIO
+// ══════════════════════════════════════════
+function selectTipo(val) {
+  formData.tipo = val;
+  document.querySelectorAll('#tipo-grupo .radio-card').forEach(c =>
+    c.classList.toggle('selected', c.querySelector('input').value === val));
+  document.getElementById('err-tipo').classList.remove('show');
+  document.getElementById('card-distribuidor').style.display = val === 'Indirecto' ? 'block' : 'none';
+  if (val === 'Directo') { formData.distribuidor = ''; document.getElementById('f-distribuidor').value = ''; }
+}
+function selectCanal(val) {
+  formData.canal = val;
+  document.querySelectorAll('#canal-grupo .radio-card').forEach(c =>
+    c.classList.toggle('selected', c.querySelector('input').value === val));
+  document.getElementById('err-canal').classList.remove('show');
+}
+
+// ══════════════════════════════════════════
+//  TOGGLE SUCURSAL
+// ══════════════════════════════════════════
+function toggleSucursal() {
+  formData.esSucursal = !formData.esSucursal;
+  const track  = document.getElementById('toggle-track');
+  const thumb  = document.getElementById('toggle-thumb');
+  const card   = document.getElementById('card-sucursal-nombre');
+  const togCard = document.getElementById('toggle-sucursal-card');
+  if (formData.esSucursal) {
+    track.style.background   = 'var(--blue)';
+    track.style.borderColor  = 'var(--blue)';
+    thumb.style.transform    = 'translateX(20px)';
+    thumb.style.background   = '#fff';
+    togCard.classList.add('selected');
+    card.style.display = 'block';
+  } else {
+    track.style.background   = '#E2E8F4';
+    track.style.borderColor  = 'var(--border)';
+    thumb.style.transform    = 'translateX(0)';
+    thumb.style.background   = 'var(--text3)';
+    togCard.classList.remove('selected');
+    card.style.display = 'none';
+    document.getElementById('f-sucursal').value = '';
+    document.getElementById('nombre-preview').style.display = 'none';
+  }
+}
+function updateNombrePreview() {
+  if (!formData.esSucursal) return;
+  const razon = document.getElementById('f-razon').value.trim();
+  const suc   = document.getElementById('f-sucursal').value.trim();
+  const prev  = document.getElementById('nombre-preview');
+  if (razon && suc) { prev.textContent = '📋 ' + razon + ' — ' + suc; prev.style.display = 'block'; }
+  else prev.style.display = 'none';
+}
+
+// ══════════════════════════════════════════
+//  ESTADO → CIUDADES
+// ══════════════════════════════════════════
+function onEstadoChange() {
+  const estado = document.getElementById('f-estado').value;
+  const sel = document.getElementById('f-ciudad');
+  sel.innerHTML = '<option value="">Seleccionar ciudad...</option>';
+  if (estado && CIUDADES[estado]) {
+    [...CIUDADES[estado]].sort().forEach(c => {
+      const o = document.createElement('option');
+      o.value = o.textContent = c;
+      sel.appendChild(o);
+    });
+    sel.disabled = false;
+  } else {
+    sel.innerHTML = '<option value="">Primero selecciona un estado...</option>';
+    sel.disabled = true;
+  }
+  document.getElementById('err-estado').classList.remove('show');
+  document.getElementById('f-estado').classList.remove('error');
+}
+
+// ══════════════════════════════════════════
+//  UBICACIÓN — DOS MÉTODOS
+// ══════════════════════════════════════════
+let locMethod = 'gps'; // 'gps' | 'map'
+let leafletMap = null;
+let leafletMarker = null;
+
+function selectLocMethod(method) {
+  locMethod = method;
+  // Actualizar estilos de las opciones
+  document.getElementById('loc-opt-gps').classList.toggle('active', method === 'gps');
+  document.getElementById('loc-opt-map').classList.toggle('active', method === 'map');
+  document.getElementById('loc-body-gps').style.display = method === 'gps' ? 'block' : 'none';
+  document.getElementById('loc-body-map').style.display = method === 'map' ? 'block' : 'none';
+
+  if (method === 'map') {
+    // Pequeño delay para que el contenedor sea visible antes de inicializar
+    setTimeout(() => initLeafletMap(), 50);
+  }
+}
+
+function initLeafletMap() {
+  if (leafletMap) {
+    leafletMap.invalidateSize();
+    return;
+  }
+  // Centrar en Venezuela por defecto
+  const defaultLat = 8.0, defaultLng = -66.0;
+  leafletMap = L.map('leaflet-map', { zoomControl: true }).setView([defaultLat, defaultLng], 6);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 19
+  }).addTo(leafletMap);
+
+  // Si ya hay coords guardadas (ej: vinieron del GPS antes), centrar y marcar
+  if (gpsCoords) {
+    placeMapMarker(parseFloat(gpsCoords.lat), parseFloat(gpsCoords.lng));
+    leafletMap.setView([gpsCoords.lat, gpsCoords.lng], 16);
+  }
+
+  leafletMap.on('click', e => {
+    placeMapMarker(e.latlng.lat, e.latlng.lng);
+    setGPSResult(e.latlng.lat.toFixed(6), e.latlng.lng.toFixed(6));
+  });
+}
+
+function placeMapMarker(lat, lng) {
+  const icon = L.divIcon({
+    html: `<div style="background:var(--blue);width:22px;height:22px;border-radius:50% 50% 50% 0;
+                  transform:rotate(-45deg);border:3px solid #fff;
+                  box-shadow:0 2px 8px rgba(27,63,155,0.5)"></div>`,
+    iconSize: [22, 22], iconAnchor: [11, 22], className: ''
+  });
+  if (leafletMarker) leafletMarker.setLatLng([lat, lng]);
+  else leafletMarker = L.marker([lat, lng], { icon }).addTo(leafletMap);
+}
+
+function getGPS() {
+  const btn = document.getElementById('gps-btn');
+  const lbl = document.getElementById('gps-label');
+  lbl.textContent = 'Obteniendo ubicación...';
+  btn.disabled = true;
+  if (!navigator.geolocation) {
+    lbl.textContent = 'GPS no disponible en este dispositivo';
+    btn.disabled = false;
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      setGPSResult(lat, lng);
+      btn.classList.add('success');
+      lbl.textContent = '✓ Ubicación obtenida';
+      btn.disabled = false;
+      document.getElementById('err-gps').classList.remove('show');
+    },
+    () => {
+      lbl.textContent = 'No se pudo obtener la ubicación';
+      btn.disabled = false;
+      document.getElementById('err-gps').classList.add('show');
+    },
+    { enableHighAccuracy: true, timeout: 12000 }
+  );
+}
+
+function setGPSResult(lat, lng) {
+  gpsCoords = { lat, lng };
+  formData.gps = lat + ', ' + lng;
+  document.getElementById('gps-lat').textContent = lat;
+  document.getElementById('gps-lng').textContent = lng;
+  document.getElementById('gps-result').style.display = 'block';
+  document.getElementById('gps-maps-link').href = `https://maps.google.com/?q=${lat},${lng}`;
+  document.getElementById('err-gps').classList.remove('show');
+}
+
+// ══════════════════════════════════════════
+//  RESUMEN
+// ══════════════════════════════════════════
+function buildResumen() {
+  const rows = [
+    ['Encuestador', currentUser],
+    ['Razón Social', formData.razon],
+    formData.esSucursal ? ['Sucursal', formData.sucursal] : null,
+    ['Nombre registrado', formData.nombre_final],
+    ['RIF', formData.rif],
+    ['Tipo', formData.tipo],
+    formData.distribuidor ? ['Distribuidor', formData.distribuidor] : null,
+    ['Canal', formData.canal],
+    ['Sub-Canal', formData.subcanal],
+    ['Estado', formData.estado],
+    ['Ciudad', formData.ciudad],
+  ].filter(Boolean);
+  document.getElementById('resumen-body').innerHTML = rows.map(([k, val]) =>
+    `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border2)">
+      <span style="color:var(--text3)">${k}</span>
+      <span style="color:var(--text);font-weight:600;text-align:right;max-width:60%">${val||'—'}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  ENVÍO
+// ══════════════════════════════════════════
+async function enviarEncuesta() {
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  const payload = {
+    timestamp: new Date().toISOString(),
+    encuestador: currentUser,
+    razon_social: formData.razon,
+    es_sucursal: formData.esSucursal ? 'Sí' : 'No',
+    nombre_sucursal: formData.sucursal || '',
+    nombre_cliente: formData.nombre_final,
+    rif: formData.rif,
+    tipo_cliente: formData.tipo,
+    distribuidor: formData.distribuidor || '',
+    canal: formData.canal,
+    sub_canal: formData.subcanal,
+    estado: formData.estado,
+    ciudad: formData.ciudad,
+    gps: formData.gps || ''
+  };
+  if (!isOnline) { saveToQueue(payload); showSuccess(true); return; }
+  try { await sendToSheets(payload); showSuccess(false); }
+  catch { saveToQueue(payload); showSuccess(true); }
+  btn.disabled = false;
+  btn.textContent = '✓ Enviar encuesta';
+}
+async function sendToSheets(payload) {
+  const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+  if (!res.ok) throw new Error('Error de red');
+}
+
+// ══════════════════════════════════════════
+//  COLA OFFLINE
+// ══════════════════════════════════════════
+function saveToQueue(payload) { const q = getQueue(); q.push(payload); localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
+function getQueue() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch { return []; } }
+async function syncQueue() {
+  const queue = getQueue(); if (!queue.length) return;
+  const failed = [];
+  for (const item of queue) { try { await sendToSheets(item); } catch { failed.push(item); } }
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(failed));
+  updateQueueBadge();
+}
+function updateQueueBadge() {
+  const q = getQueue().length;
+  document.getElementById('queue-info').style.display = q > 0 ? 'flex' : 'none';
+  document.getElementById('btn-sync').style.display   = q > 0 ? 'flex' : 'none';
+  if (q > 0) document.getElementById('queue-count').textContent = q;
+}
+function verPendientes() { if (isOnline) syncQueue(); }
+
+// ══════════════════════════════════════════
+//  SUCCESS
+// ══════════════════════════════════════════
+function showSuccess(offline) {
+  document.getElementById('success-msg').textContent = offline
+    ? 'Sin conexión: la encuesta se guardó localmente y se enviará automáticamente cuando haya internet.'
+    : 'Los datos han sido registrados correctamente en Google Sheets.';
+  showScreen('screen-success');
+  document.getElementById('progress-fill').style.width = '100%';
+  updateQueueBadge();
+  formData = {};
+  gpsCoords = null;
+  // Volver al paso 1 automáticamente después de 2 segundos
+  setTimeout(() => nuevaEncuesta(), 2000);
+}
+
+// ══════════════════════════════════════════
+//  CERRAR SESIÓN
+// ══════════════════════════════════════════
+function doLogout() {
+  if (!confirm('¿Cerrar sesión? Podrás ingresar con otro correo.')) return;
+  currentUser = '';
+  localStorage.removeItem(USER_KEY);
+  formData = {}; gpsCoords = null;
+  document.getElementById('header-user').textContent = 'Iniciando sesión...';
+  document.getElementById('btn-logout').style.display = 'none';
+  document.getElementById('login-email').value = '';
+  // Limpiar formulario
+  ['f-razon','f-rif','f-distribuidor','f-sucursal'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['f-estado','f-ciudad','f-subcanal'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex=0; });
+  document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-distribuidor').style.display = 'none';
+  formData.esSucursal = false;
+  document.getElementById('toggle-track').style.background  = '#E2E8F4';
+  document.getElementById('toggle-track').style.borderColor = 'var(--border)';
+  document.getElementById('toggle-thumb').style.transform   = 'translateX(0)';
+  document.getElementById('toggle-thumb').style.background  = 'var(--text3)';
+  document.getElementById('toggle-sucursal-card').classList.remove('selected');
+  document.getElementById('card-sucursal-nombre').style.display = 'none';
+  document.getElementById('nombre-preview').style.display = 'none';
+  document.getElementById('gps-btn').classList.remove('success');
+  document.getElementById('gps-label').textContent = 'Obtener ubicación actual';
+  document.getElementById('gps-result').style.display = 'none';
+  document.getElementById('progress-fill').style.width = '0%';
+  showScreen('screen-login');
+  updateProgress(0);
+}
+function nuevaEncuesta() {
+  formData = {}; gpsCoords = null;
+  ['f-razon','f-rif','f-distribuidor','f-sucursal'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['f-estado','f-ciudad','f-subcanal'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex=0; });
+  document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-distribuidor').style.display = 'none';
+  formData.esSucursal = false;
+  document.getElementById('toggle-track').style.background  = '#E2E8F4';
+  document.getElementById('toggle-track').style.borderColor = 'var(--border)';
+  document.getElementById('toggle-thumb').style.transform   = 'translateX(0)';
+  document.getElementById('toggle-thumb').style.background  = 'var(--text3)';
+  document.getElementById('toggle-sucursal-card').classList.remove('selected');
+  document.getElementById('card-sucursal-nombre').style.display = 'none';
+  document.getElementById('nombre-preview').style.display = 'none';
+  document.getElementById('gps-btn').classList.remove('success');
+  document.getElementById('gps-label').textContent = 'Obtener ubicación actual';
+  document.getElementById('gps-result').style.display = 'none';
+  document.getElementById('progress-fill').style.width = '0%';
+  // Resetear mapa Leaflet
+  locMethod = 'gps';
+  if (leafletMarker) { leafletMarker.remove(); leafletMarker = null; }
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  showScreen('screen-1');
+  updateProgress(1);
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem(USER_KEY);
+  if (saved) {
+    currentUser = saved;
+    document.getElementById('header-user').textContent = saved;
+    document.getElementById('login-email').value = saved;
+    document.getElementById('btn-logout').style.display = 'block';
+    showScreen('screen-1');
+    updateProgress(1);
+  }
+  if (!isOnline) {
+    document.getElementById('status-dot').classList.add('offline');
+    document.getElementById('status-text').textContent = 'Sin conexión';
+    document.getElementById('offline-banner').classList.add('show');
+  }
+  document.getElementById('f-ciudad').disabled = true;
+  if (isOnline) syncQueue();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+});
+</script>
+</body>
+</html>
