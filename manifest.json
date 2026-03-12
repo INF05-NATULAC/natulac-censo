@@ -1,27 +1,28 @@
 {
   "name": "Natulac — Censo de Clientes",
   "short_name": "Natulac Censo",
-  "description": "Aplicación de censo de clientes Natulac para fuerza de ventas",
-  "start_url": "/index.html",
+  "description": "Aplicación de censo de clientes para la fuerza de ventas de Natulac",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#06183D",
-  "theme_color": "#0D3B8C",
-  "orientation": "portrait",
+  "background_color": "#1B3F9B",
+  "theme_color": "#1B3F9B",
+  "orientation": "portrait-primary",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "https://qa.natulac.com/wp-content/uploads/2022/07/cropped-favicon.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "https://qa.natulac.com/wp-content/uploads/2022/07/cropped-favicon.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
-  ],
-  "categories": ["business", "productivity"],
-  "lang": "es",
-  "dir": "ltr"
+  ]
 }

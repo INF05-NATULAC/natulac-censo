@@ -1,8 +1,7 @@
-const CACHE_NAME = 'censo-v1';
+const CACHE_NAME = 'natulac-censo-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  './index.html',
+  './manifest.json'
 ];
 
 self.addEventListener('install', e => {
@@ -22,8 +21,16 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Para peticiones al Apps Script no cachear
-  if (e.request.url.includes('script.google.com')) return;
+  // No cachear llamadas externas (Apps Script, Leaflet, Google Fonts, logo)
+  const url = e.request.url;
+  if (
+    url.includes('script.google.com') ||
+    url.includes('unpkg.com') ||
+    url.includes('fonts.googleapis.com') ||
+    url.includes('fonts.gstatic.com') ||
+    url.includes('tile.openstreetmap.org') ||
+    url.includes('natulac.com')
+  ) return;
 
   e.respondWith(
     caches.match(e.request).then(cached => {
@@ -32,6 +39,6 @@ self.addEventListener('fetch', e => {
         caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         return response;
       });
-    }).catch(() => caches.match('/index.html'))
+    }).catch(() => caches.match('./index.html'))
   );
 });
