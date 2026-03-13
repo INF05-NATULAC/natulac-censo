@@ -531,7 +531,7 @@
 // ══════════════════════════════════════════
 //  CONFIGURACIÓN
 // ══════════════════════════════════════════
-const SCRIPT_URL = 'TU_APPS_SCRIPT_URL_AQUI'; // ← Pegar URL del Web App de Apps Script
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1GIEOMRjiAv6aJcHRZeRt1W5C_WEjpiKJGj1WOvkcpOq-U7Dj6cvy5jOCz1Tnrkwa/exec';
 
 // ══════════════════════════════════════════
 //  ESTADO GLOBAL
@@ -937,8 +937,11 @@ async function enviarEncuesta() {
   btn.textContent = '✓ Enviar encuesta';
 }
 async function sendToSheets(payload) {
-  const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-  if (!res.ok) throw new Error('Error de red');
+  const encoded = encodeURIComponent(JSON.stringify(payload));
+  const url = `${SCRIPT_URL}?data=${encoded}`;
+  // Usamos no-cors con GET para evitar bloqueos CORS de Google Apps Script
+  const res = await fetch(url, { method: 'GET', mode: 'no-cors' });
+  // no-cors siempre retorna opaque response, asumimos éxito si no lanza error
 }
 
 // ══════════════════════════════════════════
