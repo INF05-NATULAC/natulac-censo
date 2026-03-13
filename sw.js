@@ -1,4 +1,4 @@
-const CACHE_NAME = 'natulac-censo-v2';
+const CACHE_NAME = 'natulac-censo-v3';
 const ASSETS = [
   './index.html',
   './manifest.json'
@@ -12,6 +12,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
+  // Eliminar todos los cachés viejos
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
@@ -21,16 +22,20 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // No cachear llamadas externas (Apps Script, Leaflet, Google Fonts, logo)
   const url = e.request.url;
+
+  // Dejar pasar sin cachear todo lo externo
   if (
     url.includes('script.google.com') ||
     url.includes('unpkg.com') ||
+    url.includes('openstreetmap.org') ||
     url.includes('fonts.googleapis.com') ||
     url.includes('fonts.gstatic.com') ||
-    url.includes('tile.openstreetmap.org') ||
     url.includes('natulac.com')
   ) return;
+
+  // Solo cachear GET
+  if (e.request.method !== 'GET') return;
 
   e.respondWith(
     caches.match(e.request).then(cached => {
