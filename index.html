@@ -169,7 +169,12 @@
   .loc-option-title { font-size: 14px; font-weight: 700; color: var(--text); }
   .loc-option-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
   .loc-option-body { padding: 12px 14px; border-top: 1px solid var(--border); background: var(--white); }
+  /* Forzar z-index correcto del mapa Leaflet dentro del scroll */
+  #leaflet-map { z-index: 0 !important; }
+  .leaflet-container { font-family: 'Nunito Sans', sans-serif !important; }
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 </head>
 <body>
@@ -486,40 +491,38 @@
             </div>
           </div>
           <div class="loc-option-body" id="loc-body-map" style="display:none">
-            <!-- Buscador de dirección -->
+            <!-- Buscador -->
             <div style="display:flex;gap:8px;margin-bottom:10px">
-              <input type="text" id="map-search" placeholder="Buscar dirección o lugar..."
-                style="flex:1;font-size:14px;padding:10px 12px"
+              <input type="text" id="map-search" placeholder="Buscar dirección o lugar en Venezuela..."
+                style="flex:1;font-size:13px;padding:9px 12px"
                 onkeydown="if(event.key==='Enter'){searchMapLocation();}">
               <button onclick="searchMapLocation()"
                 style="background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);
-                       padding:0 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
-                Buscar
+                       padding:0 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">
+                🔍
               </button>
             </div>
-            <!-- Mapa Google Maps embed -->
-            <div id="gmap-container" style="height:250px;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);margin-bottom:8px;position:relative">
-              <iframe id="gmap-frame"
-                width="100%" height="100%"
-                style="border:0;display:block"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                src="https://maps.google.com/maps?q=10.4806,-66.9036&z=6&output=embed">
-              </iframe>
-              <!-- Overlay con pin central -->
-              <div id="gmap-pin" style="display:none;position:absolute;top:50%;left:50%;
-                   transform:translate(-50%,-100%);font-size:28px;pointer-events:none;
-                   filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4))">📍</div>
+            <!-- Instrucción -->
+            <div style="font-size:12px;color:var(--text2);background:var(--blue-pale);border-radius:6px;
+                        padding:7px 10px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+              <span>👆</span>
+              <span>Toca cualquier punto del mapa para colocar el marcador</span>
             </div>
-            <!-- Botón confirmar ubicación del mapa -->
-            <button class="gps-btn" id="map-confirm-btn" onclick="confirmMapLocation()"
-              style="border-style:solid;border-color:var(--blue);color:var(--blue)">
-              <span style="font-size:18px">✓</span>
-              <span id="map-confirm-label">Confirmar esta ubicación</span>
+            <!-- Mapa Leaflet -->
+            <div id="leaflet-map" style="height:280px;border-radius:10px;border:1.5px solid var(--border);
+                 margin-bottom:10px;z-index:0;position:relative"></div>
+            <!-- Coordenadas seleccionadas en tiempo real -->
+            <div id="map-coords-preview" style="display:none;background:var(--blue-pale);border:1px solid var(--border);
+                 border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);margin-bottom:10px">
+              <div style="font-weight:700;color:var(--blue);margin-bottom:4px">📍 Punto seleccionado:</div>
+              <div>Lat: <span id="map-lat-preview" style="font-weight:600"></span> &nbsp;|&nbsp; Lng: <span id="map-lng-preview" style="font-weight:600"></span></div>
+            </div>
+            <!-- Botón confirmar -->
+            <button class="gps-btn" id="map-confirm-btn" onclick="confirmMapLocation()" disabled
+              style="opacity:0.5;cursor:not-allowed">
+              <span style="font-size:16px">✓</span>
+              <span id="map-confirm-label">Selecciona un punto en el mapa</span>
             </button>
-            <div class="field-hint" style="margin-top:8px">
-              Busca una dirección o desplázate al lugar exacto, luego toca "Confirmar"
-            </div>
           </div>
         </div>
 
@@ -840,9 +843,10 @@ function onEstadoChange() {
 // ══════════════════════════════════════════
 //  UBICACIÓN — DOS MÉTODOS
 // ══════════════════════════════════════════
-let locMethod = 'gps';
-let mapCenter = { lat: 10.4806, lng: -66.9036 }; // Venezuela por defecto
-let mapZoom = 6;
+let locMethod   = 'gps';
+let leafletMap  = null;
+let leafletMarker = null;
+let mapPendingCoords = null; // coords seleccionadas pero no confirmadas
 
 function selectLocMethod(method) {
   locMethod = method;
@@ -851,47 +855,133 @@ function selectLocMethod(method) {
   document.getElementById('loc-body-gps').style.display = method === 'gps' ? 'block' : 'none';
   document.getElementById('loc-body-map').style.display = method === 'map' ? 'block' : 'none';
   if (method === 'map') {
-    // Si ya hay coords del GPS, centrar el mapa ahí
-    if (gpsCoords) {
-      mapCenter = { lat: parseFloat(gpsCoords.lat), lng: parseFloat(gpsCoords.lng) };
-      mapZoom = 16;
-    }
-    updateMapFrame();
+    // Pequeño delay para que el div sea visible antes de inicializar
+    setTimeout(initLeaflet, 80);
   }
 }
 
-function updateMapFrame() {
-  const frame = document.getElementById('gmap-frame');
-  frame.src = `https://maps.google.com/maps?q=${mapCenter.lat},${mapCenter.lng}&z=${mapZoom}&output=embed`;
+function initLeaflet() {
+  if (leafletMap) {
+    leafletMap.invalidateSize();
+    return;
+  }
+
+  // Centro por defecto: Venezuela
+  const defaultLat = 8.0, defaultLng = -66.0, defaultZoom = 6;
+
+  leafletMap = L.map('leaflet-map', {
+    center: [defaultLat, defaultLng],
+    zoom: defaultZoom,
+    zoomControl: true,
+    tap: true,          // habilita toque en móvil
+    tapTolerance: 15
+  });
+
+  // Tiles OpenStreetMap
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 19
+  }).addTo(leafletMap);
+
+  // Si ya había coords (del GPS), centrar ahí
+  if (gpsCoords) {
+    const lat = parseFloat(gpsCoords.lat);
+    const lng = parseFloat(gpsCoords.lng);
+    leafletMap.setView([lat, lng], 16);
+    placeLeafletMarker(lat, lng);
+  }
+
+  // Clic / toque en el mapa → colocar marcador
+  leafletMap.on('click', function(e) {
+    placeLeafletMarker(e.latlng.lat, e.latlng.lng);
+  });
+}
+
+function placeLeafletMarker(lat, lng) {
+  // Icono personalizado azul
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="
+      width:22px;height:22px;
+      background:var(--blue);
+      border:3px solid #fff;
+      border-radius:50% 50% 50% 0;
+      transform:rotate(-45deg);
+      box-shadow:0 2px 8px rgba(27,63,155,0.5)">
+    </div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 22]
+  });
+
+  if (leafletMarker) {
+    leafletMarker.setLatLng([lat, lng]);
+  } else {
+    leafletMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(leafletMap);
+    // Arrastre del marcador también actualiza coords
+    leafletMarker.on('dragend', function() {
+      const pos = leafletMarker.getLatLng();
+      updateMapPreview(pos.lat, pos.lng);
+    });
+  }
+
+  leafletMap.panTo([lat, lng]);
+  updateMapPreview(lat, lng);
+}
+
+function updateMapPreview(lat, lng) {
+  mapPendingCoords = { lat: lat.toFixed(6), lng: lng.toFixed(6) };
+  document.getElementById('map-lat-preview').textContent = mapPendingCoords.lat;
+  document.getElementById('map-lng-preview').textContent = mapPendingCoords.lng;
+  document.getElementById('map-coords-preview').style.display = 'block';
+  // Habilitar botón confirmar
+  const btn = document.getElementById('map-confirm-btn');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor = 'pointer';
+  document.getElementById('map-confirm-label').textContent = 'Confirmar esta ubicación';
+  btn.style.borderColor = 'var(--blue)';
+  btn.style.color = 'var(--blue)';
 }
 
 function searchMapLocation() {
   const query = document.getElementById('map-search').value.trim();
   if (!query) return;
   const label = document.getElementById('map-confirm-label');
+  const btn   = document.getElementById('map-confirm-btn');
   label.textContent = 'Buscando...';
-  // Usar Nominatim (OpenStreetMap) para geocodificar — gratuito, sin API key
-  fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', Venezuela')}&format=json&limit=1`)
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+
+  fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', Venezuela')}&format=json&limit=1`, {
+    headers: { 'Accept-Language': 'es' }
+  })
     .then(r => r.json())
     .then(results => {
       if (results && results.length > 0) {
-        mapCenter = { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
-        mapZoom = 16;
-        updateMapFrame();
-        label.textContent = `📍 ${results[0].display_name.split(',')[0]} — Confirmar`;
+        const lat = parseFloat(results[0].lat);
+        const lng = parseFloat(results[0].lon);
+        if (!leafletMap) initLeaflet();
+        leafletMap.setView([lat, lng], 16);
+        placeLeafletMarker(lat, lng);
       } else {
-        label.textContent = 'No encontrado — intenta otra búsqueda';
+        label.textContent = 'No encontrado — intenta con otro nombre';
+        btn.disabled = false;
+        btn.style.opacity = '1';
       }
     })
-    .catch(() => { label.textContent = 'Error de búsqueda — intenta de nuevo'; });
+    .catch(() => {
+      label.textContent = 'Error de búsqueda — verifica conexión';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    });
 }
 
 function confirmMapLocation() {
-  const lat = mapCenter.lat.toFixed(6);
-  const lng = mapCenter.lng.toFixed(6);
-  setGPSResult(lat, lng);
-  document.getElementById('map-confirm-btn').style.borderColor = 'var(--success)';
-  document.getElementById('map-confirm-btn').style.color = 'var(--success)';
+  if (!mapPendingCoords) return;
+  setGPSResult(mapPendingCoords.lat, mapPendingCoords.lng);
+  const btn = document.getElementById('map-confirm-btn');
+  btn.style.borderColor = '#16a34a';
+  btn.style.color = '#16a34a';
   document.getElementById('map-confirm-label').textContent = '✓ Ubicación confirmada';
 }
 
@@ -1083,12 +1173,16 @@ function nuevaEncuesta() {
   document.getElementById('progress-fill').style.width = '0%';
   // Resetear mapa
   locMethod = 'gps';
-  mapCenter = { lat: 10.4806, lng: -66.9036 };
-  mapZoom = 6;
-  document.getElementById('map-confirm-btn').style.borderColor = 'var(--blue)';
-  document.getElementById('map-confirm-btn').style.color = 'var(--blue)';
-  document.getElementById('map-confirm-label').textContent = 'Confirmar esta ubicación';
-  document.getElementById('map-search').value = '';
+  mapPendingCoords = null;
+  if (leafletMarker) { leafletMarker.remove(); leafletMarker = null; }
+  if (leafletMap)    { leafletMap.remove();    leafletMap = null;    }
+  if (document.getElementById('map-search'))        document.getElementById('map-search').value = '';
+  if (document.getElementById('map-coords-preview')) document.getElementById('map-coords-preview').style.display = 'none';
+  if (document.getElementById('map-confirm-btn')) {
+    const btn = document.getElementById('map-confirm-btn');
+    btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed';
+    document.getElementById('map-confirm-label').textContent = 'Selecciona un punto en el mapa';
+  }
   showScreen('screen-1');
   updateProgress(1);
 }
