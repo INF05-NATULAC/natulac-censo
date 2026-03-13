@@ -211,6 +211,36 @@
     ⚠ Sin conexión — La encuesta se guardará y enviará cuando haya internet
   </div>
 
+  <!-- ══ UPDATE BANNER ══ -->
+  <div id="update-banner" style="
+    display:none;
+    background:#1B3F9B;
+    color:#fff;
+    padding:10px 16px;
+    font-size:13px;
+    font-weight:600;
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    z-index:9999;
+    border-bottom:2px solid #2DD4BF;">
+    <span>🆕 Nueva versión disponible</span>
+    <button onclick="applyUpdate()" style="
+      background:#2DD4BF;
+      color:#0D1E40;
+      border:none;
+      border-radius:6px;
+      padding:6px 14px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      white-space:nowrap;
+      font-family:'Nunito Sans',sans-serif">
+      ↻ Actualizar ahora
+    </button>
+  </div>
+
   <!-- ══ PROGRESS ══ -->
   <div class="progress-bar">
     <div class="progress-fill" id="progress-fill" style="width:0%"></div>
@@ -1188,6 +1218,22 @@ function nuevaEncuesta() {
 }
 
 // ══════════════════════════════════════════
+//  ACTUALIZACIÓN PWA
+// ══════════════════════════════════════════
+function applyUpdate() {
+  const btn = document.querySelector('#update-banner button');
+  btn.textContent = 'Actualizando...';
+  btn.disabled = true;
+  navigator.serviceWorker.getRegistration().then(reg => {
+    if (reg && reg.waiting) {
+      reg.waiting.postMessage('SKIP_WAITING');
+    } else {
+      window.location.reload();
+    }
+  });
+}
+
+// ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
@@ -1210,7 +1256,32 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   document.getElementById('f-ciudad').disabled = true;
   if (isOnline) syncQueue();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      // Verificar actualizaciones cada vez que abre la app
+      reg.update();
+
+      // SW nuevo instalado esperando → mostrar banner
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // Hay una versión nueva lista — mostrar banner
+            document.getElementById('update-banner').style.display = 'flex';
+          }
+        });
+      });
+    });
+
+    // Cuando el SW activa la nueva versión → recargar la página
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+  }
 });
 </script>
 </body>
