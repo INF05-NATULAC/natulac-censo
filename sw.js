@@ -4,7 +4,7 @@
 //     una actualización para que los teléfonos
 //     reciban el banner de "Actualizar"
 // ══════════════════════════════════════════
-const VERSION    = '1.1';
+const VERSION    = '1.2';
 const CACHE_NAME = 'natulac-censo-' + VERSION;
 const ASSETS     = ['./index.html', './manifest.json'];
 

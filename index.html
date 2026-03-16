@@ -297,10 +297,9 @@
           <div class="field-error" id="err-razon">Campo requerido</div>
         </div>
         <div class="field">
-          <label>RIF del cliente <span class="req">*</span></label>
+          <label>RIF del cliente <span style="font-size:11px;color:var(--text3)">(opcional)</span></label>
           <input type="text" id="f-rif" placeholder="Ej: J000537585" maxlength="20">
           <div class="field-hint">Formato: J000537585 o G200131004</div>
-          <div class="field-error" id="err-rif">Campo requerido</div>
         </div>
       </div>
 
@@ -735,7 +734,7 @@ function validateStep(step) {
   if (step === 1) {
     let ok = true;
     if (!v('f-razon', 'err-razon')) ok = false;
-    if (!v('f-rif', 'err-rif')) ok = false;
+    //if (!v('f-rif', 'err-rif')) ok = false;  // RIF opcional
     if (formData.esSucursal && !v('f-sucursal', 'err-sucursal')) ok = false;
     return ok;
   }
