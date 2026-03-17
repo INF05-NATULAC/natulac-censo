@@ -1,8 +1,8 @@
 [{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "com.natulac.censo",
-        "sha256_cert_fingerprints": ["1F:EE:99:FA:24:BC:28:1A:30:79:45:C2:B4:81:6A:CF:C4:F8:BF:36:39:F5:78:4A:A3:BE:58:76:FB:B0:AA:03"]
-      }
-    }]
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.natulac.censo",
+    "sha256_cert_fingerprints": ["D8:9B:B7:BE:EE:DB:D3:7C:20:70:B2:C1:FC:C7:DA:51:C7:21:0C:A3:A2:7C:AD:FC:00:FD:BB:2F:3C:98:D8:55"]
+  }
+}]
