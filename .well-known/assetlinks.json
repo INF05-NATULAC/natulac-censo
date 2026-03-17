@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.natulac.censo",
+        "sha256_cert_fingerprints": ["DD:22:E4:C2:69:01:6A:44:49:41:04:23:6A:0E:59:D2:6B:53:64:A4:25:CE:B0:38:39:45:AF:DF:36:09:56:ED"]
+      }
+    }]
